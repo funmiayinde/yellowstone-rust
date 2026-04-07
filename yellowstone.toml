@@ -1,0 +1,71 @@
+# yellowstone.toml
+# Reference configuration for yellowstone-rust.
+# Load via: let cfg: ClientConfig = toml::from_str(&std::fs::read_to_string("yellowstone.toml")?)?;
+# Requires the `serde` feature flag.
+
+# gRPC endpoint URI. Required.
+endpoint = "http://your-yellowstone-node:10000"
+
+# Bearer auth token sent as x-token gRPC metadata.
+# auth_token = "your-secret-token"
+
+# ── Timeouts ──────────────────────────────────────────────────────────────
+
+# Timeout for the initial connection attempt (seconds).
+connect_timeout = 10.0
+
+# Timeout for the subscribe RPC call (seconds). Not the stream.
+request_timeout = 5.0
+
+# ── Backpressure ──────────────────────────────────────────────────────────
+
+# Size of the mpsc channel buffer per subscription.
+# 10_000 is the recommended default for most workloads.
+buffer_size = 10000
+
+# Policy when the consumer falls behind the stream.
+# Options: "Block" | "DropOldest" | "DropNewest"
+#
+# DropOldest — recommended for stateful consumers (liquidation monitors,
+#              health trackers). Always processes the most recent account state.
+# Block      — applies TCP backpressure to the gRPC server. Safe but may
+#              cause server-side stream timeouts for very slow consumers.
+# DropNewest — keeps the buffer stable. Incoming updates are discarded
+#              when full.
+slow_consumer_policy = "DropOldest"
+
+# ── Reconnection ──────────────────────────────────────────────────────────
+
+# Maximum number of reconnect attempts before the stream errors permanently.
+# null = retry forever (recommended for production).
+max_reconnect_attempts = null  # null = forever
+
+# ── HTTP/2 keep-alive ─────────────────────────────────────────────────────
+
+# Interval between HTTP/2 keep-alive pings (seconds).
+http2_keep_alive_interval = 20.0
+
+# Timeout for HTTP/2 keep-alive pings (seconds).
+http2_keep_alive_timeout  = 5.0
+
+# ── Message size ──────────────────────────────────────────────────────────
+
+# Maximum gRPC receive message size in bytes (default: 64 MiB).
+max_decoding_message_size = 67108864
+
+# ── TLS (optional) ────────────────────────────────────────────────────────
+
+# Uncomment to enable TLS. Required for endpoints using https://.
+#
+# [tls]
+# Path to a custom CA certificate (PEM). Required for self-signed endpoints.
+# ca_cert_path = "/etc/ssl/my-ca.pem"
+#
+# Client certificate (PEM) for mutual TLS.
+# client_cert_path = "/etc/ssl/client.pem"
+#
+# Client private key (PEM) for mutual TLS.
+# client_key_path = "/etc/ssl/client.key"
+#
+# Override the server domain name for TLS SNI.
+# domain_override = "my-custom-domain.internal"

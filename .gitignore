@@ -1,0 +1,12 @@
+# Build
+target/
+Cargo.lock
+
+# Secrets — never commit these
+.env
+.env.production
+
+# Logs
+*.log
+logs/
+data/

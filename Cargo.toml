@@ -1,0 +1,115 @@
+[package]
+name          = "yellowstone-rust"
+version       = "1.0.0"
+edition       = "2021"
+rust-version  = "1.75"
+authors       = ["SabiTrade <hello@sabitrade.xyz>"]
+description   = "Production-grade, ultra-low latency Rust client for Yellowstone gRPC"
+license       = "MIT"
+repository    = "https://github.com/sabidex/yellowstone-rust"
+documentation = "https://docs.rs/yellowstone-rust"
+keywords      = ["solana", "yellowstone", "geyser", "grpc", "blockchain"]
+categories    = ["network-programming", "asynchronous"]
+readme        = "README.md"
+
+# ── Version compatibility notes ────────────────────────────────────────────
+#
+# yellowstone-grpc-client 12.x dropped solana-sdk from its proto crate, so
+# we pick solana-sdk independently with no version conflict from proto.
+#
+# tonic 0.14 always pulls tokio-rustls → rustls 0.23 → zeroize ^1.7.
+# solana-sdk 2.1+ uses curve25519-dalek 4.x → zeroize ^1 (includes 1.7). ✓
+# solana-sdk 2.0.x uses curve25519-dalek 3.x → zeroize <1.4.             ✗
+#
+# Do NOT downgrade solana-sdk below 2.1 — the zeroize conflict returns.
+
+[features]
+default = ["metrics", "tracing"]
+metrics = ["dep:prometheus", "dep:once_cell"]
+tracing = ["dep:tracing"]
+serde   = ["dep:serde", "dep:serde_json"]
+
+[dependencies]
+# Yellowstone gRPC  (12.x dropped solana-sdk from proto — no dep conflict)
+yellowstone-grpc-client = { version = "=12.2.0" }
+yellowstone-grpc-proto  = { version = "=12.1.0", features = ["tonic"] }
+
+# gRPC  (yellowstone 12.x requires tonic 0.14)
+tonic = { version = "0.14", default-features = false, features = [
+    "channel",
+    "codegen",
+    "tls-native-roots",   # load macOS system keychain CAs — curl confirmed they trust both endpoints
+] }
+prost = "0.13"
+
+# rustls crypto backend — ring is smaller and compiles faster than aws-lc-rs.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+
+# Async
+tokio       = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "io-util", "signal"] }
+tokio-util  = "0.7"
+futures     = "0.3"
+pin-project = "1"
+
+# Solana  (2.1+ uses curve25519-dalek 4.x, compatible with zeroize 1.7)
+solana-sdk = { version = "~2.1", default-features = false, features = ["full"] }
+
+# Data
+bytes = "1"
+bs58  = "0.5"
+
+# Utilities
+thiserror = "1"
+anyhow    = "1"
+rand      = "0.8"
+
+# Optional
+prometheus = { version = "0.13", optional = true }
+once_cell  = { version = "1",    optional = true }
+tracing    = { version = "0.1",  optional = true }
+serde      = { version = "1",    features = ["derive"], optional = true }
+serde_json = { version = "1",    optional = true }
+
+[dev-dependencies]
+criterion          = { version = "0.5", features = ["html_reports"] }
+tokio-test         = "0.4"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+axum               = "0.7"
+serde_json         = "1"
+
+[[example]]
+name = "account_stream"
+
+[[example]]
+name = "multi_subscription"
+
+[[example]]
+name = "custom_backoff"
+
+[[example]]
+name = "metrics_server"
+required-features = ["metrics"]
+
+[[example]]
+name = "graceful_shutdown"
+
+[[example]]
+name = "transaction_filter"
+
+[[bench]]
+name    = "decode_throughput"
+harness = false
+
+[[bench]]
+name    = "channel_throughput"
+harness = false
+
+[profile.release]
+opt-level     = 3
+lto           = "fat"
+codegen-units = 1
+panic         = "abort"
+
+[profile.bench]
+inherits = "release"
+debug    = true
