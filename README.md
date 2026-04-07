@@ -19,6 +19,7 @@ The official Yellowstone repository ships raw proto bindings. That is a protocol
 **yellowstone-rust** is that scaffolding, extracted, cleaned, hardened, and published as a first-class crate.
 
 Built and maintained by [Sabitrade](https://sabitrade.xyz) — on-chain trading intelligence infrastructure for Solana.
+Docs [Sabitrade Gitbook](https://funmiayinde11.gitbook.io/sabitrade)
 
 ---
 
